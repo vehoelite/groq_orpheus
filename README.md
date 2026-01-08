@@ -24,35 +24,24 @@ visit: (https://console.groq.com/)
 ## Supported Groq TTS Models and Voices
 
 ### Models
-- `playai-tts`
-- `playai-tts-arabic`
+- `canopylabs/orpheus-v1-english`
+- `canopylabs/orpheus-arabic-saudi`
 
 ### Voices
 The integration provides the following built-in voice options from Groq:
+# English Models
+- `autumn`
+- `diana`
+- `hannah`
+- `austin`
+- `Daniel`
+- `troy`
 
-- `Ahmad-PlayAI`
-- `Amira-PlayAI`
-- `Arista-PlayAI`
-- `Atlas-PlayAI`
-- `Basil-PlayAI`
-- `Briggs-PlayAI`
-- `Calum-PlayAI`
-- `Celeste-PlayAI`
-- `Cheyenne-PlayAI`
-- `Chip-PlayAI`
-- `Cillian-PlayAI`
-- `Deedee-PlayAI`
-- `Fritz-PlayAI`
-- `Gail-PlayAI`
-- `Indigo-PlayAI`
-- `Khalid-PlayAI`
-- `Mamaw-PlayAI`
-- `Mason-PlayAI`
-- `Mikail-PlayAI`
-- `Mitch-PlayAI`
-- `Nasser-PlayAI`
-- `Quinn-PlayAI`
-- `Thunder-PlayAI`
+# Arabic Models
+- `fahad`
+- `sultan`
+- `lulwa`
+- `noura`
 
 > For the latest list of models and voices, see the [Groq TTS documentation](https://console.groq.com/docs/text-to-speech).
 
@@ -69,7 +58,7 @@ data:
   options:
     chime: true                          # Enable or disable the chime
     normalize_audio: false               # Enable loudness normalization
-    voice: Arista-PlayAI                 # Override voice for this call
+    voice: troy                 # Override voice for this call
 ```
 
 ## HACS installation (preferred)
