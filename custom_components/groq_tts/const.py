@@ -10,32 +10,25 @@ CONF_VOICE = "voice"
 CONF_URL = "url"
 UNIQUE_ID = "unique_id"
 
-MODELS = ["playai-tts", "playai-tts-arabic"]
-VOICES = [
-    "Ahmad-PlayAI",
-    "Amira-PlayAI",
-    "Arista-PlayAI",
-    "Atlas-PlayAI",
-    "Basil-PlayAI",
-    "Briggs-PlayAI",
-    "Calum-PlayAI",
-    "Celeste-PlayAI",
-    "Cheyenne-PlayAI",
-    "Chip-PlayAI",
-    "Cillian-PlayAI",
-    "Deedee-PlayAI",
-    "Fritz-PlayAI",
-    "Gail-PlayAI",
-    "Indigo-PlayAI",
-    "Khalid-PlayAI",
-    "Mamaw-PlayAI",
-    "Mason-PlayAI",
-    "Mikail-PlayAI",
-    "Mitch-PlayAI",
-    "Nasser-PlayAI",
-    "Quinn-PlayAI",
-    "Thunder-PlayAI",
+MODELS = ["canopylabs/orpheus-v1-english", "canopylabs/orpheus-arabic-saudi"]
+# English voices for canopylabs/orpheus-v1-english
+VOICES_ENGLISH = [
+    "autumn",
+    "diana",
+    "hannah",
+    "austin",
+    "Daniel",
+    "troy",
 ]
+# Arabic voices for canopylabs/orpheus-arabic-saudi
+VOICES_ARABIC = [
+    "fahad",
+    "sultan",
+    "lulwa",
+    "noura",
+]
+# Combined list of all available voices
+VOICES = VOICES_ENGLISH + VOICES_ARABIC
 
 CONF_CHIME_ENABLE = "chime"
 CONF_CHIME_SOUND = "chime_sound"
