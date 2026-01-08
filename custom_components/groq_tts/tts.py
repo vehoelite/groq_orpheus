@@ -92,6 +92,54 @@ class GroqTTSEntity(TextToSpeechEntity):
     def name(self) -> str:
         return self._config.data.get(CONF_MODEL, "").upper()
 
+    def _split_text(self, text: str, max_length: int = 200) -> list[str]:
+        """Split text into chunks respecting the Orpheus API 200 character limit.
+        
+        Tries to split at sentence boundaries when possible, otherwise splits at word boundaries.
+        """
+        if len(text) <= max_length:
+            return [text]
+        
+        chunks = []
+        remaining = text
+        
+        while len(remaining) > max_length:
+            # Try to find a sentence boundary (., !, ?) within the last 50 chars of max_length
+            search_start = max(0, max_length - 50)
+            search_end = min(len(remaining), max_length)
+            search_text = remaining[search_start:search_end]
+            
+            # Look for sentence endings
+            sentence_end = -1
+            for punct in ['. ', '! ', '? ', '.\n', '!\n', '?\n']:
+                pos = search_text.rfind(punct)
+                if pos != -1:
+                    sentence_end = search_start + pos + len(punct.rstrip())
+                    break
+            
+            if sentence_end > 0:
+                # Split at sentence boundary
+                chunk = remaining[:sentence_end].strip()
+                remaining = remaining[sentence_end:].strip()
+            else:
+                # Try to split at word boundary
+                word_boundary = remaining.rfind(' ', 0, max_length)
+                if word_boundary > 0:
+                    chunk = remaining[:word_boundary].strip()
+                    remaining = remaining[word_boundary:].strip()
+                else:
+                    # Force split at max_length if no word boundary found
+                    chunk = remaining[:max_length].strip()
+                    remaining = remaining[max_length:].strip()
+            
+            if chunk:
+                chunks.append(chunk)
+        
+        if remaining:
+            chunks.append(remaining)
+        
+        return chunks
+
     async def async_get_tts_audio(
         self, message: str, language: str, options: dict | None = None,
     ) -> tuple[str, bytes] | tuple[None, None]:
@@ -101,20 +149,86 @@ class GroqTTSEntity(TextToSpeechEntity):
         options = options or {}
 
         try:
-            if len(message) > 4096:
-                raise Exception("Message exceeds maximum allowed length")
-
+            # Orpheus API has a strict 200 character limit per request
+            # We'll split longer messages and concatenate the audio
             effective_voice = options.get(
                 CONF_VOICE,
                 self._config.options.get(CONF_VOICE, self._config.data.get(CONF_VOICE)),
             )
 
-            _LOGGER.debug("Creating TTS API request")
-            api_start = time.monotonic()
-            speech = await self._engine.async_get_tts(self.hass, message, voice=effective_voice)
-            api_duration = (time.monotonic() - api_start) * 1000
-            _LOGGER.debug("TTS API call completed in %.2f ms", api_duration)
-            audio_content = speech.content
+            # Split message into chunks if needed
+            text_chunks = self._split_text(message, max_length=200)
+            _LOGGER.debug("Split message into %d chunks (total length: %d)", len(text_chunks), len(message))
+
+            # Generate TTS for each chunk
+            audio_chunks = []
+            for i, chunk in enumerate(text_chunks):
+                _LOGGER.debug("Creating TTS API request for chunk %d/%d (length: %d)", i + 1, len(text_chunks), len(chunk))
+                api_start = time.monotonic()
+                speech = await self._engine.async_get_tts(self.hass, chunk, voice=effective_voice)
+                api_duration = (time.monotonic() - api_start) * 1000
+                _LOGGER.debug("TTS API call for chunk %d completed in %.2f ms", i + 1, api_duration)
+                audio_chunks.append(speech.content)
+            
+            # Concatenate all audio chunks if we have multiple
+            if len(audio_chunks) > 1:
+                _LOGGER.debug("Concatenating %d audio chunks", len(audio_chunks))
+                # Use ffmpeg to concatenate WAV files using filter_complex
+                async def concat_audio_chunks(chunks: list[bytes]) -> bytes:
+                    import tempfile
+                    temp_files = []
+                    try:
+                        # Write each chunk to a temp file
+                        for i, chunk in enumerate(chunks):
+                            temp_file = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+                            temp_file.write(chunk)
+                            temp_file.close()
+                            temp_files.append(temp_file.name)
+                        
+                        # Build ffmpeg command with filter_complex for concatenation
+                        cmd = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y"]
+                        
+                        # Add all input files
+                        for temp_file in temp_files:
+                            cmd.extend(["-i", temp_file])
+                        
+                        # Build concat filter
+                        filter_parts = []
+                        for i in range(len(temp_files)):
+                            filter_parts.append(f"[{i}:a]")
+                        filter_complex = "".join(filter_parts) + f"concat=n={len(temp_files)}:v=0:a=1[out]"
+                        
+                        cmd.extend([
+                            "-filter_complex", filter_complex,
+                            "-map", "[out]",
+                            "-ac", "1",
+                            "-ar", "24000",
+                            "-f", "wav",
+                            "pipe:1",
+                        ])
+                        
+                        process = await asyncio.create_subprocess_exec(
+                            *cmd,
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.PIPE,
+                        )
+                        stdout, stderr = await process.communicate()
+                        if process.returncode != 0:
+                            _LOGGER.error("ffmpeg concat error: %s", stderr.decode())
+                            raise Exception("ffmpeg concat failed")
+                        
+                        return stdout
+                    finally:
+                        # Clean up temp files
+                        for temp_file in temp_files:
+                            try:
+                                os.unlink(temp_file)
+                            except Exception:
+                                pass
+                
+                audio_content = await concat_audio_chunks(audio_chunks)
+            else:
+                audio_content = audio_chunks[0]
 
             chime_enabled = options.get(
                 CONF_CHIME_ENABLE,
