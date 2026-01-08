@@ -192,17 +192,21 @@ class GroqTTSEntity(TextToSpeechEntity):
                         for temp_file in temp_files:
                             cmd.extend(["-i", temp_file])
                         
-                        # Build concat filter
+                        # Build concat filter - normalize all inputs to same format, then concatenate
+                        # Process each input: resample to 44.1kHz and ensure stereo
                         filter_parts = []
                         for i in range(len(temp_files)):
-                            filter_parts.append(f"[{i}:a]")
-                        filter_complex = "".join(filter_parts) + f"concat=n={len(temp_files)}:v=0:a=1[out]"
+                            # Resample to 44.1kHz, then ensure stereo (works for both mono and stereo inputs)
+                            filter_parts.append(f"[{i}:a]aresample=44100,channels=2:channel_layout=stereo[ch{i}]")
+                        # Concatenate all processed chunks
+                        concat_inputs = "".join([f"[ch{i}]" for i in range(len(temp_files))])
+                        filter_complex = ";".join(filter_parts) + f";{concat_inputs}concat=n={len(temp_files)}:v=0:a=1[out]"
                         
                         cmd.extend([
                             "-filter_complex", filter_complex,
                             "-map", "[out]",
-                            "-ac", "1",
-                            "-ar", "24000",
+                            "-ac", "2",  # Stereo for better Cast compatibility
+                            "-ar", "44100",  # Standard sample rate for Cast
                             "-f", "wav",
                             "pipe:1",
                         ])
@@ -288,13 +292,15 @@ class GroqTTSEntity(TextToSpeechEntity):
                             "-map",
                             "[out]",
                             "-ac",
-                            "1",
+                            "2",  # Stereo for better Cast compatibility
                             "-ar",
-                            "24000",
+                            "44100",  # Standard sample rate for Cast
                             "-b:a",
-                            "128k",
+                            "192k",  # Higher bitrate for better quality
                             "-f",
                             "mp3",
+                            "-acodec",
+                            "libmp3lame",  # Explicit codec for better compatibility
                             "pipe:1",
                         ]
                     else:
@@ -313,13 +319,15 @@ class GroqTTSEntity(TextToSpeechEntity):
                             "-map",
                             "[out]",
                             "-ac",
-                            "1",
+                            "2",  # Stereo for better Cast compatibility
                             "-ar",
-                            "24000",
+                            "44100",  # Standard sample rate for Cast
                             "-b:a",
-                            "128k",
+                            "192k",  # Higher bitrate for better quality
                             "-f",
                             "mp3",
+                            "-acodec",
+                            "libmp3lame",  # Explicit codec for better compatibility
                             "pipe:1",
                         ]
                 else:
@@ -332,21 +340,24 @@ class GroqTTSEntity(TextToSpeechEntity):
                         "-i",
                         "pipe:0",
                         "-ac",
-                        "1",
+                        "2",  # Stereo for better Cast compatibility
                         "-ar",
-                        "24000",
+                        "44100",  # Standard sample rate for Cast
                         "-b:a",
-                        "128k",
+                        "192k",  # Higher bitrate for better quality
                         "-af",
                         "loudnorm=I=-16:TP=-1:LRA=5",
                         "-f",
                         "mp3",
+                        "-acodec",
+                        "libmp3lame",  # Explicit codec for better compatibility
                         "pipe:1",
                     ]
 
                 audio_content = await run_ffmpeg(cmd, audio_content)
             else:
                 # Convert WAV to MP3 when no chime or normalization is needed
+                # Use Cast-compatible settings: stereo, 44.1kHz, higher bitrate
                 cmd = [
                     "ffmpeg",
                     "-hide_banner",
@@ -356,13 +367,15 @@ class GroqTTSEntity(TextToSpeechEntity):
                     "-i",
                     "pipe:0",
                     "-ac",
-                    "1",
+                    "2",  # Stereo for better Cast compatibility
                     "-ar",
-                    "24000",
+                    "44100",  # Standard sample rate for Cast
                     "-b:a",
-                    "128k",
+                    "192k",  # Higher bitrate for better quality
                     "-f",
                     "mp3",
+                    "-acodec",
+                    "libmp3lame",  # Explicit codec for better compatibility
                     "pipe:1",
                 ]
                 audio_content = await run_ffmpeg(cmd, audio_content)
