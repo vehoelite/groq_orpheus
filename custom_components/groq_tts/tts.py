@@ -146,6 +146,8 @@ class GroqTTSEntity(TextToSpeechEntity):
                     raise Exception("ffmpeg failed")
                 return stdout
 
+            # Orpheus API returns WAV format, but Home Assistant expects MP3
+            # Always convert WAV to MP3, even when chime/normalization are disabled
             if chime_enabled or normalize_audio:
                 if chime_enabled:
                     chime_file = self._config.options.get(
@@ -228,6 +230,27 @@ class GroqTTSEntity(TextToSpeechEntity):
                         "pipe:1",
                     ]
 
+                audio_content = await run_ffmpeg(cmd, audio_content)
+            else:
+                # Convert WAV to MP3 when no chime or normalization is needed
+                cmd = [
+                    "ffmpeg",
+                    "-hide_banner",
+                    "-loglevel",
+                    "error",
+                    "-y",
+                    "-i",
+                    "pipe:0",
+                    "-ac",
+                    "1",
+                    "-ar",
+                    "24000",
+                    "-b:a",
+                    "128k",
+                    "-f",
+                    "mp3",
+                    "pipe:1",
+                ]
                 audio_content = await run_ffmpeg(cmd, audio_content)
 
             overall_duration = (time.monotonic() - overall_start) * 1000
