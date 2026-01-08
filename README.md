@@ -5,43 +5,45 @@ The Groq TTS component for Home Assistant makes it possible to use the Groq API 
 ## Features  
 
 - **Text-to-Speech** conversion using Groq's API  
-- **Support for multiple languages and voices** – No special configuration needed; the AI model auto-recognizes the language.  
+- **Support for English and Arabic** – Choose between English (Orpheus V1) and Arabic (Saudi dialect) models with language-specific voices.  
 - **Customizable speech model** – [Check supported voices and models](https://console.groq.com/docs/text-to-speech).  
 - **Integration with Home Assistant** – Works seamlessly with assistants, automations, and scripts.  
 - **Custom endpoint option** – Allows you to use your own Groq API endpoint.
 - **Chime option** – Useful for announcements on speakers. *(See Devices → Groq TTS → CONFIGURE button)*
 - **User-configurable chime sounds** – Drop your own chime sound into  `config/custom_components/groq_tts/chime` folder (MP3).
 - **Audio normalization option** – Uses more CPU but improves audio clarity on mobile phones and small speakers. *(See Devices → Groq TTS → CONFIGURE button)*
-- **Dynamic model discovery** – Available models are fetched from the Groq API during setup; voices are selected from a built-in list.
+- **Dynamic model discovery** – Available models are fetched from the Groq API during setup; voices are selected from a built-in list matching the selected model.
 - **Per-call options** – Voice and normalization can be changed when calling `tts.speak`.
 - **In-memory caching** – Frequently used phrases are cached to reduce API calls. Cache size is configurable in options.
 
-The integration relies on `ffmpeg` for merging chime sounds and for optional loudness normalization. Ensure `ffmpeg` is installed on the system running Home Assistant.
+The integration relies on `ffmpeg` for merging chime sounds, converting audio formats (from WAV to MP3), and for optional loudness normalization. Ensure `ffmpeg` is installed on the system running Home Assistant.
 
 ### *Caution! You need a free Groq API key* ###
 visit: (https://console.groq.com/)
 
 ## Supported Groq TTS Models and Voices
 
+This integration uses Groq's Orpheus TTS models, which provide high-quality, natural-sounding speech synthesis.
+
 ### Models
-- `canopylabs/orpheus-v1-english`
-- `canopylabs/orpheus-arabic-saudi`
+- **`canopylabs/orpheus-v1-english`** - Expressive English TTS with vocal direction support
+- **`canopylabs/orpheus-arabic-saudi`** - Authentic Saudi dialect synthesis
 
 ### Voices
-The integration provides the following built-in voice options from Groq:
-# English Models
-- `autumn`
-- `diana`
-- `hannah`
-- `austin`
-- `Daniel`
-- `troy`
 
-# Arabic Models
-- `fahad`
-- `sultan`
-- `lulwa`
-- `noura`
+#### English Voices (for `canopylabs/orpheus-v1-english`)
+- **`autumn`** (Female)
+- **`diana`** (Female)
+- **`hannah`** (Female)
+- **`austin`** (Male)
+- **`Daniel`** (Male)
+- **`troy`** (Male)
+
+#### Arabic Voices (for `canopylabs/orpheus-arabic-saudi`)
+- **`fahad`** (Male)
+- **`sultan`** (Male)
+- **`lulwa`** (Female)
+- **`noura`** (Female)
 
 > For the latest list of models and voices, see the [Groq TTS documentation](https://console.groq.com/docs/text-to-speech).
 
@@ -82,15 +84,6 @@ data:
 ```
 3. **Restart Home Assistant**
 4. Go to Settings -> Devices & Services -> **+ Add Integration** and search for Groq TTS
-
-## Important: Accept PlayAI TTS Model Terms
-
-Before you can use the PlayAI TTS models with Groq, you must accept the terms for the model in your Groq account:
-
-1. Go to: [https://console.groq.com/playground?model=playai-tts](https://console.groq.com/playground?model=playai-tts)
-2. Log in with your Groq account.
-3. Accept the terms for the PlayAI TTS model.
-4. After accepting, you can use the integration and generate speech.
 
 ## Options & Behavior
 
