@@ -107,7 +107,7 @@ class GroqTTSConfigFlow(ConfigFlow, domain=DOMAIN):
     data_schema = vol.Schema({
         vol.Optional(CONF_API_KEY): str,
         vol.Optional(CONF_URL, default="https://api.groq.com/openai/v1/audio/speech"): str,
-        vol.Required(CONF_MODEL, default="playai-tts"): selector({
+        vol.Required(CONF_MODEL, default="canopylabs/orpheus-v1-english"): selector({
             "select": {
                 "options": MODELS,
                 "mode": "dropdown",
@@ -115,7 +115,7 @@ class GroqTTSConfigFlow(ConfigFlow, domain=DOMAIN):
                 "custom_value": True
             }
         }),
-        vol.Required(CONF_VOICE, default="Arista-PlayAI"): selector({
+        vol.Required(CONF_VOICE, default="troy"): selector({
             "select": {
                 "options": VOICES,
                 "mode": "dropdown",
@@ -131,10 +131,10 @@ class GroqTTSConfigFlow(ConfigFlow, domain=DOMAIN):
         schema = vol.Schema({
             vol.Optional(CONF_API_KEY): str,
             vol.Optional(CONF_URL, default="https://api.groq.com/openai/v1/audio/speech"): str,
-            vol.Required(CONF_MODEL, default="playai-tts"): selector({
+            vol.Required(CONF_MODEL, default="canopylabs/orpheus-v1-english"): selector({
                 "select": {"options": models, "mode": "dropdown", "sort": True, "custom_value": True}
             }),
-            vol.Required(CONF_VOICE, default="Arista-PlayAI"): selector({
+            vol.Required(CONF_VOICE, default="troy"): selector({
                 "select": {"options": voices, "mode": "dropdown", "sort": True, "custom_value": True}
             }),
         })
@@ -233,7 +233,7 @@ class GroqTTSOptionsFlow(OptionsFlow):
             ): str,
             vol.Optional(
                 CONF_MODEL,
-                default=self.config_entry.options.get(CONF_MODEL, self.config_entry.data.get(CONF_MODEL, "playai-tts"))
+                default=self.config_entry.options.get(CONF_MODEL, self.config_entry.data.get(CONF_MODEL, "canopylabs/orpheus-v1-english"))
             ): selector({
                 "select": {
                     "options": models,
@@ -256,7 +256,7 @@ class GroqTTSOptionsFlow(OptionsFlow):
             }),
             vol.Optional(
                 CONF_VOICE,
-                default=self.config_entry.options.get(CONF_VOICE, self.config_entry.data.get(CONF_VOICE, "Arista-PlayAI"))
+                default=self.config_entry.options.get(CONF_VOICE, self.config_entry.data.get(CONF_VOICE, "troy"))
             ): selector({
                 "select": {
                     "options": voices,
