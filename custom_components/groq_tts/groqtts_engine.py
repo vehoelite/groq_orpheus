@@ -43,7 +43,8 @@ class GroqTTSEngine:
         # Provide a clear, integration-specific user agent with version
         headers["User-Agent"] = f"homeassistant-groq-tts/{VERSION}"
 
-        data = {"model": self._model, "input": text, "voice": voice}
+        # Orpheus models require response_format="wav" and only support wav format
+        data = {"model": self._model, "input": text, "voice": voice, "response_format": "wav"}
 
         cache_key = (voice, text)
         if cache_key in self._cache:
@@ -111,7 +112,7 @@ class GroqTTSEngine:
                 _LOGGER.error("Groq API network error: %s", net_err)
                 error_hint = ""
                 if error_body and "1010" in str(error_body):
-                    error_hint = " (You may need to accept the PlayAI TTS model terms at https://console.groq.com/playground?model=playai-tts)"
+                    error_hint = " (You may need to check your API key and model access at https://console.groq.com)"
                 if attempt < max_retries:
                     attempt += 1
                     await asyncio.sleep(1)
